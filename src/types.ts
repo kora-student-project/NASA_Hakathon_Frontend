@@ -67,3 +67,10 @@ export interface SatelliteCollection {
   type: "FeatureCollection";
   features: SatelliteFeature[];
 }
+
+export interface Thresholds {
+  tilt_warning: number;
+  tilt_critical: number;
+  displacement_warning_mm: number;
+  displacement_critical_mm: number;
+}

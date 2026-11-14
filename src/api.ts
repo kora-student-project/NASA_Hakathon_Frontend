@@ -5,6 +5,7 @@ import type {
   ObjectStatus,
   SatelliteCollection,
   Sensor,
+  Thresholds,
 } from "./types";
 
 const BASE = (import.meta.env.VITE_API_URL ?? "http://localhost:8000").replace(/\/$/, "");
@@ -25,6 +26,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  thresholds: () => request<Thresholds>("/api/thresholds"),
   objects: () => request<MonitoredObject[]>("/api/objects?limit=500"),
   status: (id: number) => request<ObjectStatus>(`/api/objects/${id}/status`),
   sensors: (objectId: number) => request<Sensor[]>(`/api/sensors?object_id=${objectId}`),

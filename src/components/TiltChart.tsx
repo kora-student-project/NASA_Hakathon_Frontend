@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api } from "../api";
-import type { Measurement, Sensor } from "../types";
+import type { Measurement, Sensor, Thresholds } from "../types";
 
 const RANGES = [
   { label: "1 год", hours: 1 },
@@ -16,6 +16,11 @@ export default function TiltChart({ objectId, refreshKey }: { objectId: number; 
   const [hours, setHours] = useState(24 * 7);
   const [data, setData] = useState<Measurement[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [th, setTh] = useState<Thresholds | null>(null);
+
+  useEffect(() => {
+    api.thresholds().then(setTh).catch(() => setTh(null));
+  }, []);
 
   useEffect(() => {
     setSensors([]);
@@ -84,6 +89,14 @@ export default function TiltChart({ objectId, refreshKey }: { objectId: number; 
                 labelFormatter={(t) => new Date(String(t)).toLocaleString("uk-UA")}
                 contentStyle={{ background: "#151b26", border: "1px solid #2a3342" }}
               />
+              {th && (
+                <>
+                  <ReferenceLine y={th.tilt_warning} stroke="#e0a100" strokeDasharray="5 4" />
+                  <ReferenceLine y={-th.tilt_warning} stroke="#e0a100" strokeDasharray="5 4" />
+                  <ReferenceLine y={th.tilt_critical} stroke="#d9382f" strokeDasharray="5 4" />
+                  <ReferenceLine y={-th.tilt_critical} stroke="#d9382f" strokeDasharray="5 4" />
+                </>
+              )}
               <Legend />
               <Line type="monotone" dataKey="tilt_x" name="X" stroke="#4c9ffe" dot={false} strokeWidth={2} />
               <Line type="monotone" dataKey="tilt_y" name="Y" stroke="#f08c4c" dot={false} strokeWidth={2} />
