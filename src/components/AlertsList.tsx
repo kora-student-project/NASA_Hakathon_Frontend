@@ -1,14 +1,17 @@
 import { useI18n } from "../i18n";
+import type { Source } from "../polling";
 import type { Alert, MonitoredObject } from "../types";
+import SourceRefresh from "./SourceRefresh";
 
 interface Props {
-  alerts: Alert[];
+  source: Source<Alert[]>;
   objects: MonitoredObject[];
   selectedId: number | null;
   onClear: () => void;
   onSelect: (objectId: number) => void;
   canResolve: boolean;
   onResolve: (id: number) => void;
+  resolveError: string | null;
   filter: "ALL" | "WARNING" | "CRITICAL";
   setFilter: (f: "ALL" | "WARNING" | "CRITICAL") => void;
   showResolved: boolean;
@@ -16,13 +19,14 @@ interface Props {
 }
 
 export default function AlertsList({
-  alerts,
+  source,
   objects,
   selectedId,
   onClear,
   onSelect,
   canResolve,
   onResolve,
+  resolveError,
   filter,
   setFilter,
   showResolved,
@@ -30,7 +34,7 @@ export default function AlertsList({
 }: Props) {
   const { t, fmtDateTime } = useI18n();
   const name = (id: number) => objects.find((o) => o.id === id)?.name ?? t("alerts.object", { id });
-  const shown = alerts.filter(
+  const shown = (source.data ?? []).filter(
     (a) => (selectedId === null || a.object_id === selectedId) && (filter === "ALL" || a.severity === filter),
   );
   return (
@@ -49,12 +53,14 @@ export default function AlertsList({
           </label>
         </div>
       </div>
+      <div className="source-row"><SourceRefresh source={source} /></div>
+      {resolveError && <p className="error" role="alert">{t("alerts.resolveError", { error: resolveError })}</p>}
       {selectedId !== null && (
         <button className="link" onClick={onClear}>
           {t("alerts.showAll")}
         </button>
       )}
-      {shown.length === 0 && <p className="muted">{t("alerts.none")}</p>}
+      {source.data && shown.length === 0 && <p className="muted">{t("alerts.none")}</p>}
       <ul className="alerts">
         {shown.map((a) => (
           <li key={a.id} className={`alert ${a.severity.toLowerCase()} ${a.is_resolved ? "done" : ""}`}>
