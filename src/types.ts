@@ -17,6 +17,7 @@ export interface ObjectStatus {
     tilt_x: number;
     tilt_y: number;
     temperature: number | null;
+    humidity?: number | null;
     timestamp: string;
   } | null;
   latest_satellite_data: { displacement: number; unit: string; observation_date: string } | null;

@@ -29,6 +29,10 @@ export default function ObjectPanel({ obj, status }: { obj: MonitoredObject; sta
           <b>{s?.temperature != null ? `${s.temperature.toFixed(1)} °C` : "—"}</b>
         </div>
         <div className="stat">
+          <span className="label">Вологість</span>
+          <b>{s?.humidity != null ? `${s.humidity.toFixed(0)} %` : "—"}</b>
+        </div>
+        <div className="stat">
           <span className="label">Зміщення (супутник)</span>
           <b>{sat ? `${sat.displacement} ${sat.unit}` : "—"}</b>
           {sat && <span className="label">{fmtDate(sat.observation_date)}</span>}
