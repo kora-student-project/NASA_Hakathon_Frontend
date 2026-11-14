@@ -4,6 +4,8 @@ import type { Alert, MonitoredObject } from "../types";
 interface Props {
   alerts: Alert[];
   objects: MonitoredObject[];
+  selectedId: number | null;
+  onClear: () => void;
   onSelect: (objectId: number) => void;
   canResolve: boolean;
   onResolve: (id: number) => void;
@@ -16,6 +18,8 @@ interface Props {
 export default function AlertsList({
   alerts,
   objects,
+  selectedId,
+  onClear,
   onSelect,
   canResolve,
   onResolve,
@@ -25,11 +29,13 @@ export default function AlertsList({
   setShowResolved,
 }: Props) {
   const name = (id: number) => objects.find((o) => o.id === id)?.name ?? `Об'єкт ${id}`;
-  const shown = alerts.filter((a) => filter === "ALL" || a.severity === filter);
+  const shown = alerts.filter(
+    (a) => (selectedId === null || a.object_id === selectedId) && (filter === "ALL" || a.severity === filter),
+  );
   return (
     <section className="card">
       <div className="row">
-        <h3>Попередження</h3>
+        <h3>{selectedId !== null ? `Попередження: ${name(selectedId)}` : "Попередження (усі об'єкти)"}</h3>
         <div className="controls">
           <select value={filter} onChange={(e) => setFilter(e.target.value as Props["filter"])}>
             <option value="ALL">Усі</option>
@@ -42,6 +48,11 @@ export default function AlertsList({
           </label>
         </div>
       </div>
+      {selectedId !== null && (
+        <button className="link" onClick={onClear}>
+          Показати для всіх об'єктів
+        </button>
+      )}
       {shown.length === 0 && <p className="muted">Немає попереджень.</p>}
       <ul className="alerts">
         {shown.map((a) => (

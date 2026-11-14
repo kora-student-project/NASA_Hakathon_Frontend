@@ -29,13 +29,12 @@ export default function App() {
       const [sts, sat, al] = await Promise.all([
         Promise.all(objs.map((o) => api.status(o.id))),
         api.satelliteMap(),
-        api.alerts(showResolved ? null : false),
+        api.alerts(showResolved ? null : false, 500),
       ]);
       setObjects(objs);
       setStatuses(Object.fromEntries(sts.map((s) => [s.object_id, s])));
       setSatellite(sat);
       setAlerts(al);
-      setSelectedId((cur) => cur ?? objs[0]?.id ?? null);
       setError(null);
       setTick((t) => t + 1);
     } catch (e) {
@@ -59,6 +58,8 @@ export default function App() {
   };
 
   const selected = objects.find((o) => o.id === selectedId);
+  // повторний клік по вибраному об'єкту знімає вибір
+  const toggleSelect = (id: number) => setSelectedId((cur) => (cur === id ? null : id));
 
   return (
     <div className="app">
@@ -87,13 +88,13 @@ export default function App() {
             statuses={statuses}
             satellite={satellite}
             selectedId={selectedId}
-            onSelect={setSelectedId}
+            onSelect={toggleSelect}
             showSatellite={showSatellite}
           />
           <ul className="objlist">
             {objects.map((o) => (
               <li key={o.id}>
-                <button className={o.id === selectedId ? "sel" : ""} onClick={() => setSelectedId(o.id)}>
+                <button className={o.id === selectedId ? "sel" : ""} onClick={() => toggleSelect(o.id)}>
                   {o.name} <StatusBadge status={statuses[o.id]?.status ?? "UNKNOWN"} />
                 </button>
               </li>
@@ -102,6 +103,9 @@ export default function App() {
         </div>
         <aside>
           {objects.length === 0 && !error && <p className="muted">Об'єктів моніторингу ще немає.</p>}
+          {!selected && objects.length > 0 && (
+            <p className="muted">Оберіть об'єкт на карті або в списку, щоб побачити деталі. Нижче показані попередження по всіх об'єктах.</p>
+          )}
           {selected && (
             <>
               <ObjectPanel obj={selected} status={statuses[selected.id]} />
@@ -111,6 +115,8 @@ export default function App() {
           <AlertsList
             alerts={alerts}
             objects={objects}
+            selectedId={selectedId}
+            onClear={() => setSelectedId(null)}
             onSelect={setSelectedId}
             canResolve={adminKey.length > 0}
             onResolve={resolve}
