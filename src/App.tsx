@@ -67,19 +67,7 @@ export default function App() {
   return (
     <div className="app">
       <header>
-        <h1 className="brand">
-          <svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true">
-            <defs>
-              <linearGradient id="kg" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stopColor="#6ea8ff" />
-                <stop offset="1" stopColor="#8b6cff" />
-              </linearGradient>
-            </defs>
-            <rect width="32" height="32" rx="8" fill="url(#kg)" />
-            <path d="M9 22V10m0 6 8-6m-8 6 8 6m5-12v12" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-          </svg>
-          KORA
-        </h1>
+        <h1 className="brand">KORA</h1>
         <span className="muted hide-sm">{t("app.subtitle")}</span>
         <div className="spacer" />
         <label className="check">

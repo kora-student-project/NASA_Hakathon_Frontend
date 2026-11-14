@@ -42,27 +42,27 @@ header {
   border-bottom: 1px solid var(--line);
   z-index: 1100;
 }
-.brand { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 19px; font-weight: 800; letter-spacing: 3px; }
-.brand svg { filter: drop-shadow(0 2px 8px rgba(110, 168, 255, 0.45)); }
+.brand { margin: 0; font-size: 19px; font-weight: 800; letter-spacing: 3px; }
 .spacer { flex: 1; }
 .key {
   background: var(--bg); border: 1px solid var(--line); color: var(--text);
   padding: 7px 10px; border-radius: 10px; width: 230px; transition: border-color .15s;
 }
 .key:focus { border-color: var(--accent); outline: none; }
-.seg { display: inline-flex; padding: 3px; background: var(--bg); border: 1px solid var(--line); border-radius: 999px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
 .seg button {
-  border: 0; background: transparent; color: var(--muted); font-weight: 700; font-size: 12px;
-  padding: 5px 12px; border-radius: 999px; cursor: pointer; transition: all .15s; letter-spacing: .5px;
+  border: 0; background: transparent; color: var(--muted); font-weight: 600; font-size: 12px;
+  padding: 6px 12px; cursor: pointer; letter-spacing: .5px;
 }
+.seg button + button { border-left: 1px solid var(--line); }
 .seg button:hover { color: var(--text); }
-.seg button.on { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; box-shadow: 0 2px 10px rgba(110, 168, 255, 0.35); }
+.seg button.on { background: #1d2a3d; color: var(--text); }
 .banner { background: linear-gradient(90deg, #5a1d1a, #3d1614); color: #ffd9d6; padding: 9px 18px; border-bottom: 1px solid #7a2b27; }
 
 /* ---------- Layout ---------- */
 main { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) 430px; min-height: 0; }
 .mapwrap { position: relative; min-height: 0; }
-.map { height: 100%; width: 100%; background: #0d1520; }
+.map { height: 100%; width: 100%; background: #e8e6e0; }
 aside { overflow: auto; padding: 14px; display: flex; flex-direction: column; gap: 14px; border-left: 1px solid var(--line); background: rgba(11, 16, 23, 0.6); }
 
 .objlist {
@@ -88,7 +88,7 @@ aside { overflow: auto; padding: 14px; display: flex; flex-direction: column; ga
 .card.hero { border-top: 3px solid var(--unk); }
 .card.hero.normal { border-top-color: var(--ok); }
 .card.hero.warning { border-top-color: var(--warn); }
-.card.hero.critical { border-top-color: var(--crit); box-shadow: var(--shadow), 0 0 0 1px rgba(229, 72, 77, 0.25), 0 0 32px rgba(229, 72, 77, 0.12); }
+.card.hero.critical { border-top-color: var(--crit); }
 .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .controls { display: flex; gap: 8px; align-items: center; }
 .coords { margin: 2px 0 6px; font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); }
@@ -148,12 +148,6 @@ select:hover, .btn:not(:disabled):hover { border-color: var(--accent); }
 
 /* ---------- Map markers ---------- */
 .leaflet-container { font: inherit; }
-/* темна карта без платних тайлів: інвертуємо стандартні OSM-плитки */
-.leaflet-tile-pane { filter: invert(1) hue-rotate(200deg) brightness(.92) contrast(.88) saturate(.55); }
-.leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--card); color: var(--text); border: 1px solid var(--line); box-shadow: var(--shadow); }
-.leaflet-control-zoom a { background: var(--card) !important; color: var(--text) !important; border-color: var(--line) !important; }
-.leaflet-control-attribution { background: rgba(14, 21, 32, 0.8) !important; color: var(--muted) !important; }
-.leaflet-control-attribution a { color: var(--accent) !important; }
 path.pulse { animation: pulse 1.6s ease-out infinite; }
 @keyframes pulse { 0% { stroke-width: 2; stroke-opacity: 1; } 100% { stroke-width: 22; stroke-opacity: 0; } }
 @keyframes blink { 50% { opacity: .25; } }
@@ -192,6 +186,5 @@ path.pulse { animation: pulse 1.6s ease-out infinite; }
   .alert .row { gap: 6px; }
   .controls { flex-wrap: wrap; }
   .seg button { padding: 7px 14px; }
-  .leaflet-control-zoom a { width: 36px; height: 36px; line-height: 36px; }
-}
+  }
 @media (max-width: 360px) { .grid2 { grid-template-columns: 1fr; } }
