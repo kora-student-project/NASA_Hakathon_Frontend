@@ -4,10 +4,9 @@ React + Vite + TypeScript. Карта (Leaflet + OpenStreetMap, безкошто
 
 ## Запуск
 
-Потрібен Node.js 20+ і запущений бекенд.
+Потрібен Node.js 20+ і запущений бекенд ([NASA_Hakathon_Backend](https://github.com/kora-student-project/NASA_Hakathon_Backend)).
 
 ```bash
-cd frontend
 npm install
 cp .env.example .env     # VITE_API_URL=http://localhost:8000
 npm run dev
@@ -25,7 +24,7 @@ npm run dev
 ## Деплой на Vercel (free)
 
 1. Vercel → Add New Project → імпортуйте репозиторій.
-2. **Root Directory:** `frontend`. Framework — Vite (визначиться автоматично).
+2. Framework — Vite (визначиться автоматично), Root Directory залишити порожнім.
 3. Environment Variable: `VITE_API_URL` = адреса бекенду на Render (без слеша в кінці).
 4. Після деплою додайте адресу Vercel у `CORS_ORIGINS` бекенду на Render і перезапустіть його.
 
