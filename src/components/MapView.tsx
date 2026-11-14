@@ -1,6 +1,7 @@
-import { CircleMarker, MapContainer, Popup, TileLayer, useMap } from "react-leaflet";
 import { useEffect } from "react";
-import { STATUS_COLOR, fmtDate } from "../format";
+import { CircleMarker, MapContainer, Popup, TileLayer, useMap } from "react-leaflet";
+import { STATUS_COLOR } from "../format";
+import { useI18n } from "../i18n";
 import type { MonitoredObject, ObjectStatus, SatelliteCollection } from "../types";
 
 function FlyTo({ obj }: { obj: MonitoredObject | undefined }) {
@@ -21,12 +22,14 @@ interface Props {
 }
 
 export default function MapView({ objects, statuses, satellite, selectedId, onSelect, showSatellite }: Props) {
+  const { t, fmtDate } = useI18n();
   const selected = objects.find((o) => o.id === selectedId);
   return (
     <MapContainer center={[49.8397, 24.0297]} zoom={12} className="map">
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution="&copy; OpenStreetMap contributors"
+        maxZoom={19}
       />
       <FlyTo obj={selected} />
 
@@ -39,14 +42,14 @@ export default function MapView({ objects, statuses, satellite, selectedId, onSe
               key={`sat-${p.id}`}
               center={[lat, lon]}
               radius={5}
-              pathOptions={{ color: "#5b4bd6", fillColor: "#7b6cf0", fillOpacity: 0.7, weight: 1 }}
+              pathOptions={{ color: "#a99bff", fillColor: "#7b6cf0", fillOpacity: 0.8, weight: 1 }}
             >
               <Popup>
-                <b>Супутник ({p.source})</b>
+                <b>{t("map.satellite", { source: p.source })}</b>
                 <br />
-                Зміщення: {p.displacement} {p.unit}
+                {t("map.displacement")}: {p.displacement} {p.unit}
                 <br />
-                Дата: {fmtDate(p.observation_date)}
+                {t("map.date")}: {fmtDate(p.observation_date)}
               </Popup>
             </CircleMarker>
           );
@@ -54,12 +57,14 @@ export default function MapView({ objects, statuses, satellite, selectedId, onSe
 
       {objects.map((o) => {
         const st = statuses[o.id]?.status ?? "UNKNOWN";
+        const color = STATUS_COLOR[st];
         return (
           <CircleMarker
             key={o.id}
             center={[o.latitude, o.longitude]}
             radius={o.id === selectedId ? 13 : 10}
-            pathOptions={{ color: "#fff", weight: 2, fillColor: STATUS_COLOR[st], fillOpacity: 0.95 }}
+            className={st === "CRITICAL" ? "pulse" : undefined}
+            pathOptions={{ color: st === "CRITICAL" ? color : "#ffffff", weight: 2, fillColor: color, fillOpacity: 0.95 }}
             eventHandlers={{ click: () => onSelect(o.id) }}
           >
             <Popup>{o.name}</Popup>

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "./api";
 import AlertsList from "./components/AlertsList";
+import LangSwitch from "./components/LangSwitch";
+import { useI18n } from "./i18n";
 import MapView from "./components/MapView";
 import ObjectPanel from "./components/ObjectPanel";
 import StatusBadge from "./components/StatusBadge";
@@ -10,6 +12,7 @@ import type { Alert, MonitoredObject, ObjectStatus, SatelliteCollection } from "
 const POLL_MS = 15_000;
 
 export default function App() {
+  const { t } = useI18n();
   const [objects, setObjects] = useState<MonitoredObject[]>([]);
   const [statuses, setStatuses] = useState<Record<number, ObjectStatus>>({});
   const [satellite, setSatellite] = useState<SatelliteCollection | null>(null);
@@ -64,23 +67,36 @@ export default function App() {
   return (
     <div className="app">
       <header>
-        <h1>KORA</h1>
-        <span className="muted hide-sm">NISAR + IoT моніторинг</span>
+        <h1 className="brand">
+          <svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true">
+            <defs>
+              <linearGradient id="kg" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stopColor="#6ea8ff" />
+                <stop offset="1" stopColor="#8b6cff" />
+              </linearGradient>
+            </defs>
+            <rect width="32" height="32" rx="8" fill="url(#kg)" />
+            <path d="M9 22V10m0 6 8-6m-8 6 8 6m5-12v12" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          </svg>
+          KORA
+        </h1>
+        <span className="muted hide-sm">{t("app.subtitle")}</span>
         <div className="spacer" />
         <label className="check">
           <input type="checkbox" checked={showSatellite} onChange={(e) => setShowSatellite(e.target.checked)} />
-          супутникові точки
+          {t("app.satellitePoints")}
         </label>
+        <LangSwitch />
         <input
           className="key"
           type="password"
-          placeholder="admin-ключ (для «Вирішено»)"
+          placeholder={t("app.adminKey")}
           value={adminKey}
           autoComplete="off"
           onChange={(e) => setAdminKey(e.target.value)}
         />
       </header>
-      {error && <div className="banner">Помилка з'єднання з API: {error}</div>}
+      {error && <div className="banner">{t("app.apiError", { error })}</div>}
       <main>
         <div className="mapwrap">
           <MapView
@@ -102,9 +118,9 @@ export default function App() {
           </ul>
         </div>
         <aside>
-          {objects.length === 0 && !error && <p className="muted">Об'єктів моніторингу ще немає.</p>}
+          {objects.length === 0 && !error && <p className="muted">{t("app.noObjects")}</p>}
           {!selected && objects.length > 0 && (
-            <p className="muted">Оберіть об'єкт на карті або в списку, щоб побачити деталі. Нижче показані попередження по всіх об'єктах.</p>
+            <p className="muted">{t("app.pickObject")}</p>
           )}
           {selected && (
             <>

@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
 import { CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api } from "../api";
+import { useI18n, type Key } from "../i18n";
 import type { Measurement, Sensor, Thresholds } from "../types";
 
-const RANGES = [
-  { label: "1 год", hours: 1 },
-  { label: "24 год", hours: 24 },
-  { label: "7 днів", hours: 24 * 7 },
-  { label: "Усе", hours: 0 },
+const RANGES: { key: Key; hours: number }[] = [
+  { key: "chart.1h", hours: 1 },
+  { key: "chart.24h", hours: 24 },
+  { key: "chart.7d", hours: 24 * 7 },
+  { key: "chart.all", hours: 0 },
 ];
 
 export default function TiltChart({ objectId, refreshKey }: { objectId: number; refreshKey: number }) {
+  const { t, fmtDateTime, fmtTime } = useI18n();
   const [sensors, setSensors] = useState<Sensor[]>([]);
   const [sensorId, setSensorId] = useState<number | null>(null);
   const [hours, setHours] = useState(24 * 7);
@@ -50,7 +52,7 @@ export default function TiltChart({ objectId, refreshKey }: { objectId: number; 
   return (
     <section className="card">
       <div className="row">
-        <h3>Нахил конструкції</h3>
+        <h3>{t("chart.title")}</h3>
         <div className="controls">
           {sensors.length > 1 && (
             <select value={sensorId ?? ""} onChange={(e) => setSensorId(Number(e.target.value))}>
@@ -63,31 +65,31 @@ export default function TiltChart({ objectId, refreshKey }: { objectId: number; 
           )}
           <select value={hours} onChange={(e) => setHours(Number(e.target.value))}>
             {RANGES.map((r) => (
-              <option key={r.label} value={r.hours}>
-                {r.label}
+              <option key={r.key} value={r.hours}>
+                {t(r.key)}
               </option>
             ))}
           </select>
         </div>
       </div>
       {error && <p className="error">{error}</p>}
-      {sensors.length === 0 && <p className="muted">До об'єкта не прив'язано датчиків.</p>}
-      {sensors.length > 0 && data.length === 0 && !error && <p className="muted">Немає вимірювань за цей період.</p>}
+      {sensors.length === 0 && <p className="muted">{t("chart.noSensors")}</p>}
+      {sensors.length > 0 && data.length === 0 && !error && <p className="muted">{t("chart.noData")}</p>}
       {data.length > 0 && (
         <div style={{ width: "100%", height: 220 }}>
           <ResponsiveContainer>
             <LineChart data={data} margin={{ top: 8, right: 12, left: -16, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2a3342" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#1f2a3a" />
               <XAxis
                 dataKey="timestamp"
-                tickFormatter={(t: string) => new Date(t).toLocaleTimeString("uk-UA", { hour: "2-digit", minute: "2-digit" })}
+                tickFormatter={(v: string) => fmtTime(v)}
                 stroke="#8b95a5"
                 fontSize={11}
               />
               <YAxis stroke="#8b95a5" fontSize={11} unit="°" />
               <Tooltip
-                labelFormatter={(t) => new Date(String(t)).toLocaleString("uk-UA")}
-                contentStyle={{ background: "#151b26", border: "1px solid #2a3342" }}
+                labelFormatter={(v) => fmtDateTime(String(v))}
+                contentStyle={{ background: "#121923", border: "1px solid #263041", borderRadius: 8 }}
               />
               {th && (
                 <>

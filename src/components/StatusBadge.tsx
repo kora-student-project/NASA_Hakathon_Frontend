@@ -1,10 +1,12 @@
-import { STATUS_COLOR, STATUS_LABEL } from "../format";
+import { useI18n } from "../i18n";
 import type { Status } from "../types";
 
 export default function StatusBadge({ status }: { status: Status }) {
+  const { t } = useI18n();
   return (
-    <span className="badge" style={{ background: STATUS_COLOR[status] }}>
-      {STATUS_LABEL[status]}
+    <span className={`badge ${status.toLowerCase()}`}>
+      <i className="dot" />
+      {t(`status.${status}`)}
     </span>
   );
 }
