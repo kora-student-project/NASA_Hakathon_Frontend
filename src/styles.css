@@ -1,9 +1,10 @@
 :root { color-scheme: dark; --bg:#0e131b; --card:#151b26; --line:#2a3342; --text:#e6ebf2; --muted:#8b95a5; }
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
+body { -webkit-text-size-adjust: 100%; overflow-x: hidden; }
 body { background: var(--bg); color: var(--text); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
 .app { display: flex; flex-direction: column; height: 100%; }
-header { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--card); }
+header { flex-wrap: wrap; display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--card); }
 header h1 { margin: 0; font-size: 20px; letter-spacing: 2px; }
 .spacer { flex: 1; }
 .key { background: var(--bg); border: 1px solid var(--line); color: var(--text); padding: 6px 8px; border-radius: 6px; width: 220px; }
@@ -34,4 +35,39 @@ select, .btn { background: var(--bg); color: var(--text); border: 1px solid var(
 .alert .msg { margin: 4px 0; font-size: 13px; }
 .link { background: none; border: 0; color: #7db4ff; cursor: pointer; padding: 0; font-weight: 600; }
 .error { color: #ff8b84; }
-@media (max-width: 900px) { main { grid-template-columns: 1fr; grid-template-rows: 45vh auto; overflow: auto; } aside { border-left: 0; } .hide-sm { display: none; } .key { width: 140px; } }
+/* ---------- Планшет і телефон ---------- */
+@media (max-width: 900px) {
+  .app { height: auto; min-height: 100dvh; }
+  header { position: sticky; top: 0; z-index: 1100; padding: 8px 12px; gap: 8px; }
+  header h1 { font-size: 18px; }
+  .hide-sm { display: none; }
+  .key { flex: 1 1 100%; width: auto; font-size: 16px; min-height: 40px; }
+  main { display: flex; flex-direction: column; overflow: visible; }
+  /* карта зверху, список об'єктів під нею як стрічка з прокруткою */
+  .mapwrap { display: flex; flex-direction: column; height: 52dvh; min-height: 320px; flex: none; }
+  .map { flex: 1; min-height: 0; height: auto; }
+  .objlist { position: static; display: flex; gap: 6px; overflow-x: auto; max-height: none; padding: 8px 12px; border: 0; border-top: 1px solid var(--line); border-radius: 0; background: var(--card); -webkit-overflow-scrolling: touch; }
+  .objlist li { flex: none; }
+  .objlist button { width: auto; min-height: 44px; border: 1px solid var(--line); white-space: nowrap; }
+  .objlist button.sel { border-color: #7db4ff; }
+  aside { overflow: visible; border-left: 0; padding: 12px 12px calc(16px + env(safe-area-inset-bottom)); }
+}
+
+@media (max-width: 600px) {
+  .card { padding: 12px; }
+  .card h2 { font-size: 15px; }
+  .row { flex-wrap: wrap; }
+  .stat b { font-size: 16px; }
+  select, .btn { min-height: 40px; font-size: 16px; padding: 6px 10px; }
+  .check { font-size: 13px; min-height: 40px; }
+  .check input { width: 20px; height: 20px; }
+  .link { padding: 6px 0; font-size: 14px; }
+  .alert { padding: 10px; }
+  .alert .row { gap: 6px; }
+  .controls { flex-wrap: wrap; }
+  .leaflet-control-zoom a { width: 36px; height: 36px; line-height: 36px; }
+}
+
+@media (max-width: 360px) {
+  .grid2 { grid-template-columns: 1fr; }
+}
