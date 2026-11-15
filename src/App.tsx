@@ -1,16 +1,18 @@
-import { Fragment, useCallback, useState } from "react";
+import { Fragment, Suspense, lazy, useCallback, useState } from "react";
 import { api } from "./api";
 import AlertsList from "./components/AlertsList";
 import LangSwitch from "./components/LangSwitch";
 import { useI18n } from "./i18n";
 import MapView from "./components/MapView";
 import ObjectPanel from "./components/ObjectPanel";
-import SatellitePanel from "./components/SatellitePanel";
 import SourceRefresh from "./components/SourceRefresh";
 import StatusBadge from "./components/StatusBadge";
-import TiltChart from "./components/TiltChart";
 import { displayStatus, useObjectStatuses } from "./objectStatuses";
 import { EMPTY_SOURCE, usePolling } from "./polling";
+
+// Графіки (Recharts) — найважча залежність: вантажимо їх окремим чанком лише коли вибрано об'єкт.
+const SatellitePanel = lazy(() => import("./components/SatellitePanel"));
+const TiltChart = lazy(() => import("./components/TiltChart"));
 
 const loadSatellite = (signal: AbortSignal) => api.satelliteMap(undefined, signal);
 
@@ -102,9 +104,11 @@ export default function App() {
           {selected && (
             <Fragment key={selected.id}>
               <ObjectPanel obj={selected} status={statuses[selected.id] ?? EMPTY_SOURCE} refreshKey={refreshKey} />
-              <SatellitePanel objectId={selected.id} status={statuses[selected.id]?.data ?? null}
-                thresholds={thresholds} alerts={alerts.data ?? []} />
-              <TiltChart objectId={selected.id} thresholds={thresholds.data} />
+              <Suspense fallback={<section className="card skeleton" aria-busy="true" />}>
+                <SatellitePanel objectId={selected.id} status={statuses[selected.id]?.data ?? null}
+                  thresholds={thresholds} alerts={alerts.data ?? []} />
+                <TiltChart objectId={selected.id} thresholds={thresholds.data} />
+              </Suspense>
             </Fragment>
           )}
           <AlertsList

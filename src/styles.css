@@ -305,3 +305,5 @@ aside > * { flex-shrink: 0; }
 .warn-note { color: #ffc93d; }
 .btn:disabled { cursor: progress; }
 @media (min-width: 901px) { .seg button { min-height: 34px; } .small-btn { min-height: 34px; } }
+
+.skeleton { min-height: 160px; opacity: .5; }
