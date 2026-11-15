@@ -6,6 +6,7 @@ import { useI18n } from "../i18n";
 import type { Source } from "../polling";
 import type { MonitoredObject, ObjectStatus, SatelliteCollection, Thresholds } from "../types";
 import LandslideLayer from "./LandslideLayer";
+import NisarLayer, { NisarControls, NisarLegend, todayUtc, useLatestNisarDate } from "./NisarLayer";
 import SourceRefresh from "./SourceRefresh";
 import SusceptibilityLayer, { SusceptibilityLegend } from "./SusceptibilityLayer";
 
@@ -37,7 +38,12 @@ export default function MapView({ objects, statuses, satellite, selectedId, onSe
   const [showSatellite, setShowSatellite] = useState(true);
   const [showLandslides, setShowLandslides] = useState(false);
   const [showSusceptibility, setShowSusceptibility] = useState(false);
+  const [showNisar, setShowNisar] = useState(false);
+  const [nisarDate, setNisarDate] = useState(todayUtc());
   const selected = objects.find((o) => o.id === selectedId);
+  const probe = selected ?? objects[0];
+  const latest = useLatestNisarDate(probe?.latitude ?? 49.8397, probe?.longitude ?? 24.0297, showNisar);
+  useEffect(() => { if (latest.date) setNisarDate(latest.date); }, [latest.date]);
   const objectPositions = new Set(objects.map((o) => `${o.latitude},${o.longitude}`));
   return (
     <div className="map-frame">
@@ -48,10 +54,15 @@ export default function MapView({ objects, statuses, satellite, selectedId, onSe
         </div>
         <label className="check"><input type="checkbox" checked={showSatellite}
           onChange={(e) => setShowSatellite(e.target.checked)} />{t("map.observations")}</label>
+        <label className="check"><input type="checkbox" checked={showNisar}
+          onChange={(e) => setShowNisar(e.target.checked)} />{t("map.nisar")}</label>
         <label className="check"><input type="checkbox" checked={showLandslides}
           onChange={(e) => setShowLandslides(e.target.checked)} />{t("map.landslides")}</label>
         <label className="check"><input type="checkbox" checked={showSusceptibility}
           onChange={(e) => setShowSusceptibility(e.target.checked)} />{t("map.susceptibility")}</label>
+        {showNisar && (
+          <NisarControls date={nisarDate} setDate={setNisarDate} searching={latest.searching} onLatest={latest.search} />
+        )}
       </div>
       <MapContainer center={[49.8397, 24.0297]} zoom={12} className="map">
       {imagery ? <TileLayer key="imagery"
@@ -64,6 +75,7 @@ export default function MapView({ objects, statuses, satellite, selectedId, onSe
         maxZoom={19}
       />}
       <MapEffects obj={selected} />
+      {showNisar && <NisarLayer date={nisarDate} />}
       {(showLandslides || showSusceptibility) && (
         <div className="map-messages">
           {showSusceptibility && <SusceptibilityLayer />}
@@ -125,6 +137,7 @@ export default function MapView({ objects, statuses, satellite, selectedId, onSe
           {t("map.landslideLegend")} ↗
         </a>}
       </div>
+      {showNisar && <NisarLegend foundNone={latest.done && latest.date === null} />}
       {showSusceptibility && <SusceptibilityLegend />}
     </div>
   );
