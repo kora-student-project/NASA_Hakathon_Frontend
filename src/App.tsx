@@ -83,7 +83,6 @@ export default function App() {
             satellite={satellite}
             selectedId={selectedId}
             onSelect={toggleSelect}
-            thresholds={thresholds.data}
           />
           <ul className="objlist">
             {objects.map((o) => (

@@ -26,7 +26,7 @@ export interface ObjectStatus {
     humidity?: number | null;
     timestamp: string;
   } | null;
-  latest_satellite_data: { displacement: number; unit: string; observation_date: string } | null;
+  latest_satellite_data: { displacement: number; unit: string; observation_date: string; severity: Status } | null;
   active_alerts: number;
   last_updated: string | null;
 }
@@ -68,6 +68,7 @@ export interface SatelliteFeature {
     unit: string;
     observation_date: string;
     source: string;
+    severity: Status; // рахує бекенд за порогами API
   };
 }
 

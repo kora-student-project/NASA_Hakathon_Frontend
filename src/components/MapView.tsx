@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { CircleMarker, MapContainer, Popup, TileLayer, useMap } from "react-leaflet";
 import { STATUS_COLOR } from "../format";
-import { displacementStatus, toMillimetres } from "../displacement";
 import { useI18n } from "../i18n";
 import { displayStatus, isStale } from "../objectStatuses";
 import type { Source } from "../polling";
-import type { MonitoredObject, ObjectStatus, SatelliteCollection, Thresholds } from "../types";
+import type { MonitoredObject, ObjectStatus, SatelliteCollection } from "../types";
 import LandslideLayer from "./LandslideLayer";
 import NisarLayer, { NisarControls, NisarLegend, todayUtc, useLatestNisarDate } from "./NisarLayer";
 import SourceRefresh from "./SourceRefresh";
@@ -30,10 +29,9 @@ interface Props {
   satellite: Source<SatelliteCollection>;
   selectedId: number | null;
   onSelect: (id: number) => void;
-  thresholds: Thresholds | null;
 }
 
-export default function MapView({ objects, statuses, satellite, selectedId, onSelect, thresholds }: Props) {
+export default function MapView({ objects, statuses, satellite, selectedId, onSelect }: Props) {
   const { t, fmtDate } = useI18n();
   const [imagery, setImagery] = useState(false);
   const [showSatellite, setShowSatellite] = useState(true);
@@ -95,8 +93,7 @@ export default function MapView({ objects, statuses, satellite, selectedId, onSe
           const [lon, lat] = f.geometry.coordinates;
           const p = f.properties;
           if (!Number.isFinite(lon) || !Number.isFinite(lat)) return null;
-          const level = displacementStatus(toMillimetres(p.displacement, p.unit), thresholds);
-          const color = level === "UNKNOWN" ? "#a99bff" : STATUS_COLOR[level];
+          const color = STATUS_COLOR[p.severity] ?? "#a99bff"; // severity рахує бекенд
           const overlapsObject = objectPositions.has(`${lat},${lon}`);
           return (
             <CircleMarker

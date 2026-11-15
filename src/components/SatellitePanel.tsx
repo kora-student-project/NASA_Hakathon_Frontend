@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { displacementStatus, toMillimetres } from "../displacement";
+import { toMillimetres } from "../displacement";
 import { useI18n } from "../i18n";
 import type { Source } from "../polling";
 import type { Alert, ObjectStatus, SatelliteCollection, Thresholds } from "../types";
@@ -30,8 +30,9 @@ export default function SatellitePanel({ objectId, satellite, status, thresholds
   const satelliteAlerts = alerts.filter((alert) =>
     alert.object_id === objectId && alert.sensor_id === null && !alert.is_resolved);
   const value = latest ? toMillimetres(latest.displacement, latest.unit) : null;
-  const level = displacementStatus(value, thresholds.data);
-  const validThresholds = displacementStatus(0, thresholds.data) !== "UNKNOWN" ? thresholds.data : null;
+  const level = latest?.severity ?? "UNKNOWN"; // оцінку дає бекенд, тут її не перераховуємо
+  const th = thresholds.data;
+  const validThresholds = th && th.displacement_warning_mm > 0 && th.displacement_critical_mm > th.displacement_warning_mm ? th : null;
   const chart = (history.data?.features ?? []).flatMap(({ properties: p }) => {
     const mm = toMillimetres(p.displacement, p.unit);
     const date = Date.parse(p.observation_date);
