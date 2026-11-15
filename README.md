@@ -28,7 +28,7 @@ VITE_API_URL=https://your-backend.onrender.com npm run build
 
 ## Що показує
 
-- **Карта:** підкладки OpenStreetMap і Esri World Imagery, маркери об’єктів і точки супутникового зміщення, кольори яких відповідають рівням порогів. Шар NASA COOLR показує історичні звіти, а [NASA Global Landslide Susceptibility](https://gis.earthdata.nasa.gov/portal/rest/services/Landslides/Global_Landslide_Susceptibility/ImageServer) показує регіональні класи схильності від 0 до 5.
+- **Карта:** вибір **типу карти** (випадаючий список, вибір пам'ятається): вулиці (OpenStreetMap), супутникова та гібрид із підписами (Esri World Imagery), топографічна, тіньовий рельєф, світла й темна (Esri). Усі безкоштовні, без ключів; налаштування в `src/basemaps.ts`. Далі:  маркери об’єктів і точки супутникового зміщення, кольори яких відповідають рівням порогів. Шар NASA COOLR показує історичні звіти, а [NASA Global Landslide Susceptibility](https://gis.earthdata.nasa.gov/portal/rest/services/Landslides/Global_Landslide_Susceptibility/ImageServer) показує регіональні класи схильності від 0 до 5.
 - **Панель об’єкта:** статус із бекенду, нахил X/Y, температура, вологість і кількість активних попереджень. Панель супутника показує зміщення, пороги API, доступні спостереження та активні супутникові попередження.
 - **Радарна карта NISAR:** шар `NISAR radar map` із NASA GIBS (NISAR L2 GCOV, радіолокаційне розсіювання, хибні кольори): щоденні тайли з вибором дати та кнопкою «Latest pass here», яка шукає останній проліт над вибраним об'єктом. Це радарна яскравість, а не карта зміщення: зміщення показують точки з `/api/satellite/map`.
 - **Історія датчика:** нахил X/Y і сирі осі X/Y/Z з `extra.accel` та `extra.gyro`, якщо запис їх містить. За вибраний період завантажується до 500 вимірювань.

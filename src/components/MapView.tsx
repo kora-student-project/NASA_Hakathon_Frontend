@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { CircleMarker, MapContainer, Popup, TileLayer, useMap } from "react-leaflet";
+import { BASEMAPS, loadBasemap, saveBasemap, type BasemapId } from "../basemaps";
 import { STATUS_COLOR } from "../format";
 import { useI18n } from "../i18n";
 import { displayStatus, isStale } from "../objectStatuses";
@@ -33,7 +34,8 @@ interface Props {
 
 export default function MapView({ objects, statuses, satellite, selectedId, onSelect }: Props) {
   const { t, fmtDate } = useI18n();
-  const [imagery, setImagery] = useState(false);
+  const [basemapId, setBasemapId] = useState<BasemapId>(loadBasemap);
+  const basemap = BASEMAPS.find((b) => b.id === basemapId) ?? BASEMAPS[0];
   const [showSatellite, setShowSatellite] = useState(true);
   const [showLandslides, setShowLandslides] = useState(false);
   const [showSusceptibility, setShowSusceptibility] = useState(false);
@@ -48,10 +50,12 @@ export default function MapView({ objects, statuses, satellite, selectedId, onSe
   return (
     <div className="map-frame">
       <div className="map-controls">
-        <div className="seg" role="group" aria-label={t("map.basemap")}>
-          <button type="button" className={imagery ? "" : "on"} aria-pressed={!imagery} onClick={() => setImagery(false)}>{t("map.streets")}</button>
-          <button type="button" className={imagery ? "on" : ""} aria-pressed={imagery} onClick={() => setImagery(true)}>{t("map.imagery")}</button>
-        </div>
+        <label className="field">
+          <span className="label">{t("map.basemap")}</span>
+          <select value={basemapId} onChange={(e) => { const id = e.target.value as BasemapId; setBasemapId(id); saveBasemap(id); }}>
+            {BASEMAPS.map((b) => <option key={b.id} value={b.id}>{t(b.label)}</option>)}
+          </select>
+        </label>
         <label className="check"><input type="checkbox" checked={showSatellite}
           onChange={(e) => setShowSatellite(e.target.checked)} />{t("map.observations")}</label>
         <label className="check"><input type="checkbox" checked={showNisar}
@@ -70,15 +74,12 @@ export default function MapView({ objects, statuses, satellite, selectedId, onSe
         )}
       </div>
       <MapContainer center={[49.8397, 24.0297]} zoom={12} className="map">
-      {imagery ? <TileLayer key="imagery"
-        url="https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-        attribution="Esri, Maxar, Earthstar Geographics, and the GIS User Community"
-        maxZoom={19}
-      /> : <TileLayer key="streets"
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution="&copy; OpenStreetMap contributors"
-        maxZoom={19}
-      />}
+      <TileLayer key={basemap.id} url={basemap.url} attribution={basemap.attribution}
+        maxNativeZoom={basemap.maxNativeZoom} maxZoom={19} />
+      {basemap.labelsUrl && (
+        <TileLayer key={`${basemap.id}-labels`} url={basemap.labelsUrl} attribution=""
+          maxNativeZoom={basemap.labelsMaxNativeZoom ?? 19} maxZoom={19} zIndex={300} />
+      )}
       <MapEffects obj={selected} />
       {showNisar && <NisarLayer date={nisarDate} />}
       {(showLandslides || showSusceptibility) && (

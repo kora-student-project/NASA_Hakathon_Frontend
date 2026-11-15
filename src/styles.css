@@ -307,3 +307,7 @@ aside > * { flex-shrink: 0; }
 @media (min-width: 901px) { .seg button { min-height: 34px; } .small-btn { min-height: 34px; } }
 
 .skeleton { min-height: 160px; opacity: .5; }
+
+/* ---------- Вибір типу карти ---------- */
+.field { display: inline-flex; align-items: center; gap: 6px; }
+.field .label { font-size: 12px; color: var(--muted); white-space: nowrap; }
