@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { CircleMarker, MapContainer, Popup, TileLayer, useMap } from "react-leaflet";
 import { BASEMAPS, loadBasemap, saveBasemap, type BasemapId } from "../basemaps";
 import { STATUS_COLOR } from "../format";
@@ -44,8 +44,10 @@ export default function MapView({ objects, statuses, satellite, selectedId, onSe
   const selected = objects.find((o) => o.id === selectedId);
   const probe = selected ?? objects[0];
   const latest = useLatestNisarDate(probe?.latitude ?? 49.8397, probe?.longitude ?? 24.0297, showNisar);
-  const pickedByUser = useRef(false);
-  useEffect(() => { if (latest.date && !pickedByUser.current) setNisarDate(latest.date); }, [latest.date]);
+  const [userPicked, setUserPicked] = useState(false);
+  useEffect(() => { if (latest.date && !userPicked) setNisarDate(latest.date); }, [latest.date, userPicked]);
+  // Не вантажимо порожні тайли сьогоднішньої дати, поки шукаємо найсвіжіший проліт
+  const nisarVisible = showNisar && (userPicked || !latest.searching);
   const objectPositions = new Set(objects.map((o) => `${o.latitude},${o.longitude}`));
   return (
     <div className="map-frame">
@@ -67,21 +69,21 @@ export default function MapView({ objects, statuses, satellite, selectedId, onSe
         {showNisar && (
           <NisarControls
             date={nisarDate}
-            setDate={(d) => { pickedByUser.current = true; setNisarDate(d); }}
+            setDate={(d) => { setUserPicked(true); setNisarDate(d); }}
             searching={latest.searching}
-            onLatest={() => { pickedByUser.current = false; latest.search(); }}
+            onLatest={() => { setUserPicked(false); latest.search(); }}
           />
         )}
       </div>
       <MapContainer center={[49.8397, 24.0297]} zoom={12} className="map">
       <TileLayer key={basemap.id} url={basemap.url} attribution={basemap.attribution}
-        maxNativeZoom={basemap.maxNativeZoom} maxZoom={19} />
+        maxNativeZoom={basemap.maxNativeZoom} maxZoom={19} updateWhenZooming={false} />
       {basemap.labelsUrl && (
         <TileLayer key={`${basemap.id}-labels`} url={basemap.labelsUrl} attribution=""
-          maxNativeZoom={basemap.labelsMaxNativeZoom ?? 19} maxZoom={19} zIndex={300} />
+          maxNativeZoom={basemap.labelsMaxNativeZoom ?? 19} maxZoom={19} zIndex={300} updateWhenZooming={false} />
       )}
       <MapEffects obj={selected} />
-      {showNisar && <NisarLayer date={nisarDate} />}
+      {nisarVisible && <NisarLayer date={nisarDate} />}
       {(showLandslides || showSusceptibility) && (
         <div className="map-messages">
           {showSusceptibility && <SusceptibilityLayer />}

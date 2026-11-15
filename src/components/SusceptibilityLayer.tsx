@@ -1,5 +1,5 @@
-import { CRS, latLng, type LatLngBoundsExpression, type Map } from "leaflet";
-import { useEffect, useState } from "react";
+import { CRS, latLng, latLngBounds, type LatLngBounds, type Map } from "leaflet";
+import { useEffect, useRef, useState } from "react";
 import { ImageOverlay, useMap } from "react-leaflet";
 import { useI18n } from "../i18n";
 
@@ -13,8 +13,19 @@ const RENDERING_RULE = JSON.stringify({
   rasterFunctionArguments: { Colormap: COLORS.map((color, value) => [value, ...color]) },
 });
 
-function viewportImage(map: Map) {
-  const viewport = map.getBounds();
+const PAD = 0.5; // запит із запасом по краях (інерція перетягування зсуває карту далеко): зсуви в межах запасу не потребують нового зображення
+const MAX_PX = 1100;
+const DEBOUNCE_MS = 350;
+
+interface Overlay {
+  url: string;
+  bounds: [[number, number], [number, number]];
+  covers: LatLngBounds; // що саме покриває зображення (у координатах карти)
+  zoom: number;
+}
+
+function viewportImage(map: Map): Overlay | null {
+  const viewport = map.getBounds().pad(PAD);
   const shift = Math.floor((map.getCenter().lng + 180) / 360) * 360;
   const west = Math.max(viewport.getWest() - shift, -180);
   const east = Math.min(viewport.getEast() - shift, 180);
@@ -26,56 +37,80 @@ function viewportImage(map: Map) {
   const sw = CRS.EPSG3857.project(latLng(south, west));
   const ne = CRS.EPSG3857.project(latLng(north, east));
   const size = map.getSize();
-  const scale = Math.min(1, 1200 / Math.max(size.x, size.y));
+  const w = size.x * (1 + 2 * PAD);
+  const h = size.y * (1 + 2 * PAD);
+  const scale = Math.min(1, MAX_PX / Math.max(w, h));
   const params = new URLSearchParams({
     bbox: [sw.x, sw.y, ne.x, ne.y].map((n) => n.toFixed(2)).join(","),
     bboxSR: "3857",
     imageSR: "3857",
-    size: `${Math.max(1, Math.round(size.x * scale))},${Math.max(1, Math.round(size.y * scale))}`,
+    size: `${Math.max(1, Math.round(w * scale))},${Math.max(1, Math.round(h * scale))}`,
     adjustAspectRatio: "false",
     interpolation: "RSP_NearestNeighbor",
     renderingRule: RENDERING_RULE,
-    format: "png32",
+    format: "png32", // png8 не дає виграшу (той самий розмір) і губить прозорість
     f: "image",
   });
-  const bounds: LatLngBoundsExpression = [[south, west + shift], [north, east + shift]];
-  return { url: `${NASA}/exportImage?${params}`, bounds };
+  const bounds: Overlay["bounds"] = [[south, west + shift], [north, east + shift]];
+  return { url: `${NASA}/exportImage?${params}`, bounds, covers: latLngBounds(bounds), zoom: map.getZoom() };
 }
 
 export default function SusceptibilityLayer() {
   const map = useMap();
   const { t } = useI18n();
-  const [image, setImage] = useState(() => viewportImage(map));
-  const [result, setResult] = useState<{ url: string; loaded: boolean } | null>(null);
+  const [shown, setShown] = useState<Overlay | null>(null);
+  const [state, setState] = useState<"loading" | "ready" | "error" | "coverage">("loading");
+  const current = useRef<Overlay | null>(null);
+  const token = useRef(0);
 
   useEffect(() => {
-    const update = () => setImage(viewportImage(map));
-    map.on("moveend", update);
-    return () => { map.off("moveend", update); };
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const update = () => {
+      // Нове зображення не потрібне, якщо поточне того самого масштабу вже покриває видиму ділянку
+      const have = current.current;
+      if (have && have.zoom === map.getZoom() && have.covers.contains(map.getBounds())) return;
+      const next = viewportImage(map);
+      if (!next) { setState("coverage"); return; }
+      const mine = ++token.current;
+      setState("loading");
+      // Спочатку підвантажуємо у фоні й лише потім підміняємо: стара картинка не зникає під час завантаження
+      const img = new Image();
+      img.onload = () => {
+        if (mine !== token.current) return; // застаріла відповідь
+        current.current = next;
+        setShown(next);
+        setState("ready");
+      };
+      img.onerror = () => { if (mine === token.current) setState("error"); };
+      img.src = next.url;
+    };
+    const schedule = () => { clearTimeout(timer); timer = setTimeout(update, DEBOUNCE_MS); };
+
+    update();
+    map.on("moveend", schedule);
+    return () => {
+      clearTimeout(timer);
+      token.current++;
+      map.off("moveend", schedule);
+    };
   }, [map]);
 
-  if (!image) return <div className="map-message" role="status">{t("map.susceptibilityCoverage")}</div>;
-
-  const loaded = result?.url === image.url ? result.loaded : undefined;
   return (
     <>
-      <ImageOverlay
-        key={image.url}
-        url={image.url}
-        bounds={image.bounds}
-        className="susceptibility-image"
-        opacity={0.62}
-        attribution="NASA Global Landslide Susceptibility"
-        eventHandlers={{
-          load: () => setResult({ url: image.url, loaded: true }),
-          error: () => setResult({ url: image.url, loaded: false }),
-        }}
-      />
-      {loaded !== true && (
-        <div className="map-message" role="status">
-          {t(loaded === false ? "map.susceptibilityError" : "map.susceptibilityLoading")}
-        </div>
+      {shown && (
+        <ImageOverlay
+          key={shown.url}
+          url={shown.url}
+          bounds={shown.bounds}
+          className="susceptibility-image"
+          opacity={0.62}
+          attribution="NASA Global Landslide Susceptibility"
+        />
       )}
+      {state === "coverage" && <div className="map-message" role="status">{t("map.susceptibilityCoverage")}</div>}
+      {state === "error" && <div className="map-message" role="status">{t("map.susceptibilityError")}</div>}
+      {state === "loading" && <div className="map-message" role="status">{t("map.susceptibilityLoading")}</div>}
     </>
   );
 }

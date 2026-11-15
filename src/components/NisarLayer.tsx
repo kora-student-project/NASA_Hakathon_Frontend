@@ -10,6 +10,7 @@ export const NISAR_MIN_DATE = "2025-10-29";
 const EMPTY_TILE_BYTES = 1500; // порожній тайл ≈ 288 байт
 const LOOKBACK_DAYS = 30;
 const PROBE_ZOOM = 9;
+const BATCH = 6;
 
 export const todayUtc = () => new Date().toISOString().slice(0, 10);
 
@@ -34,7 +35,7 @@ const tileUrl = (date: string, z: number, y: number, x: number) =>
 export function useLatestNisarDate(lat: number, lon: number, enabled: boolean) {
   const [state, setState] = useState<{ date: string | null; searching: boolean; done: boolean }>({
     date: null,
-    searching: false,
+    searching: true,
     done: false,
   });
   const [attempt, setAttempt] = useState(0);
@@ -43,20 +44,28 @@ export function useLatestNisarDate(lat: number, lon: number, enabled: boolean) {
     if (!enabled) return;
     const controller = new AbortController();
     setState({ date: null, searching: true, done: false });
+    const { x, y } = tileXY(lat, lon, PROBE_ZOOM);
+    const hasData = async (day: string) => {
+      try {
+        const res = await fetch(tileUrl(day, PROBE_ZOOM, y, x), { signal: controller.signal });
+        return res.ok && (await res.blob()).size > EMPTY_TILE_BYTES;
+      } catch {
+        return false;
+      }
+    };
     (async () => {
-      const { x, y } = tileXY(lat, lon, PROBE_ZOOM);
-      let day = todayUtc();
-      for (let i = 0; i < LOOKBACK_DAYS && day >= NISAR_MIN_DATE; i++) {
-        try {
-          const res = await fetch(tileUrl(day, PROBE_ZOOM, y, x), { signal: controller.signal });
-          if (res.ok && (await res.blob()).size > EMPTY_TILE_BYTES) {
-            setState({ date: day, searching: false, done: true });
-            return;
-          }
-        } catch {
-          if (controller.signal.aborted) return;
+      const days: string[] = [];
+      for (let d = todayUtc(); days.length < LOOKBACK_DAYS && d >= NISAR_MIN_DATE; d = shiftDate(d, -1)) days.push(d);
+      // Перевіряємо по BATCH днів паралельно (раніше по одному): 12 послідовних запитів ≈ 3 с, 2 пачки ≈ 0.8 с
+      for (let i = 0; i < days.length; i += BATCH) {
+        const batch = days.slice(i, i + BATCH);
+        const found = await Promise.all(batch.map(hasData));
+        if (controller.signal.aborted) return;
+        const hit = found.indexOf(true); // найновіший день у пачці з даними
+        if (hit >= 0) {
+          setState({ date: batch[hit], searching: false, done: true });
+          return;
         }
-        day = shiftDate(day, -1);
       }
       if (!controller.signal.aborted) setState({ date: null, searching: false, done: true });
     })();
@@ -76,6 +85,8 @@ export default function NisarLayer({ date }: { date: string }) {
       maxZoom={19}
       opacity={0.8}
       zIndex={250}
+      updateWhenZooming={false}
+      keepBuffer={1}
     />
   );
 }
