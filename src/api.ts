@@ -11,7 +11,9 @@ import type {
 const BASE = (import.meta.env.VITE_API_URL ?? "http://localhost:8000").replace(/\/$/, "");
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, init);
+  const timeout = AbortSignal.timeout(12_000);
+  const signal = init?.signal ? AbortSignal.any([init.signal, timeout]) : timeout;
+  const res = await fetch(`${BASE}${path}`, { ...init, signal });
   if (!res.ok) {
     let detail = res.statusText;
     try {
@@ -25,21 +27,34 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+interface AlertQuery {
+  resolved?: boolean;
+  objectId?: number;
+  severity?: Alert["severity"];
+  limit?: number;
+}
+
 export const api = {
-  thresholds: () => request<Thresholds>("/api/thresholds"),
-  objects: () => request<MonitoredObject[]>("/api/objects?limit=500"),
-  status: (id: number) => request<ObjectStatus>(`/api/objects/${id}/status`),
-  sensors: (objectId: number) => request<Sensor[]>(`/api/sensors?object_id=${objectId}`),
-  history: (sensorId: number, fromIso: string | null, limit = 500) => {
-    const q = new URLSearchParams({ limit: String(limit) });
+  thresholds: (signal?: AbortSignal) => request<Thresholds>("/api/thresholds", { signal }),
+  objects: (signal?: AbortSignal) => request<MonitoredObject[]>("/api/objects?limit=500", { signal }),
+  status: (id: number, signal?: AbortSignal) => request<ObjectStatus>(`/api/objects/${id}/status`, { signal }),
+  sensors: (objectId: number, signal?: AbortSignal) => request<Sensor[]>(`/api/sensors?object_id=${objectId}`, { signal }),
+  history: (sensorId: number, fromIso: string | null, signal?: AbortSignal) => {
+    const q = new URLSearchParams({ limit: "500" });
     if (fromIso) q.set("from", fromIso);
-    return request<Measurement[]>(`/api/sensors/${sensorId}/data?${q}`);
+    return request<Measurement[]>(`/api/sensors/${sensorId}/data?${q}`, { signal });
   },
-  satelliteMap: () => request<SatelliteCollection>("/api/satellite/map?limit=1000"),
-  alerts: (resolved: boolean | null, limit = 100) => {
+  satelliteMap: (objectId?: number, signal?: AbortSignal) => {
+    const q = new URLSearchParams({ limit: "1000" });
+    if (objectId !== undefined) q.set("object_id", String(objectId));
+    return request<SatelliteCollection>(`/api/satellite/map?${q}`, { signal });
+  },
+  alerts: ({ resolved, objectId, severity, limit = 100 }: AlertQuery, signal?: AbortSignal) => {
     const q = new URLSearchParams({ limit: String(limit) });
-    if (resolved !== null) q.set("is_resolved", String(resolved));
-    return request<Alert[]>(`/api/alerts?${q}`);
+    if (resolved !== undefined) q.set("is_resolved", String(resolved));
+    if (objectId !== undefined) q.set("object_id", String(objectId));
+    if (severity) q.set("severity", severity);
+    return request<Alert[]>(`/api/alerts?${q}`, { signal });
   },
   resolveAlert: (id: number, adminKey: string) =>
     request<Alert>(`/api/alerts/${id}/resolve`, {

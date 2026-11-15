@@ -9,6 +9,12 @@ export interface MonitoredObject {
   created_at: string;
 }
 
+export interface Vector3 {
+  x: number;
+  y: number;
+  z: number;
+}
+
 export interface ObjectStatus {
   object_id: number;
   status: Status;
@@ -39,6 +45,7 @@ export interface Measurement {
   tilt_y: number;
   temperature: number | null;
   timestamp: string;
+  extra?: { accel?: Vector3 | null; gyro?: Vector3 | null } | null;
 }
 
 export interface Alert {
