@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 
 export const POLL_MS = 15_000;
+// Історія датчика важка (сотні рядків) і змінюється повільно: 138 КБ кожні 15 с на вкладку з'їли б безкоштовний трафік.
+export const HISTORY_POLL_MS = 60_000;
 
 export interface Source<T> {
   data: T | null;
@@ -17,7 +19,7 @@ export function sourceFailure<T>(previous: Source<T> | undefined, error: unknown
   };
 }
 
-export function usePoll(run: ((signal: AbortSignal) => Promise<void>) | null, refreshKey = 0) {
+export function usePoll(run: ((signal: AbortSignal) => Promise<void>) | null, refreshKey = 0, intervalMs = POLL_MS) {
   useEffect(() => {
     if (!run) return;
     const controller = new AbortController();
@@ -30,7 +32,7 @@ export function usePoll(run: ((signal: AbortSignal) => Promise<void>) | null, re
       // у прихованій вкладці не опитуємо сервер
       if (!document.hidden) await run(controller.signal);
       running = false;
-      if (!controller.signal.aborted) timer = setTimeout(poll, POLL_MS);
+      if (!controller.signal.aborted) timer = setTimeout(poll, intervalMs);
     };
     const onVisible = () => {
       if (!document.hidden && !running) {
@@ -46,12 +48,12 @@ export function usePoll(run: ((signal: AbortSignal) => Promise<void>) | null, re
       controller.abort();
       clearTimeout(timer);
     };
-  }, [run, refreshKey]);
+  }, [run, refreshKey, intervalMs]);
 }
 
 type Loader<T> = (signal: AbortSignal) => Promise<T>;
 
-export function usePolling<T>(load: Loader<T> | null, refreshKey = 0): Source<T> {
+export function usePolling<T>(load: Loader<T> | null, refreshKey = 0, intervalMs = POLL_MS): Source<T> {
   const [response, setResponse] = useState<{ load: Loader<T>; source: Source<T> }>();
   const run = useCallback(async (signal: AbortSignal) => {
     if (!load) return;
@@ -68,6 +70,6 @@ export function usePolling<T>(load: Loader<T> | null, refreshKey = 0): Source<T>
     }
   }, [load]);
 
-  usePoll(load ? run : null, refreshKey);
+  usePoll(load ? run : null, refreshKey, intervalMs);
   return response?.load === load ? response.source : EMPTY_SOURCE;
 }

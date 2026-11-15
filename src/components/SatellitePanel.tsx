@@ -1,22 +1,29 @@
-import { useCallback } from "react";
+import { useMemo } from "react";
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { api } from "../api";
 import { displacementStatus, toMillimetres } from "../displacement";
 import { useI18n } from "../i18n";
-import { usePolling, type Source } from "../polling";
-import type { Alert, ObjectStatus, Thresholds } from "../types";
+import type { Source } from "../polling";
+import type { Alert, ObjectStatus, SatelliteCollection, Thresholds } from "../types";
 import SourceRefresh from "./SourceRefresh";
 import StatusBadge from "./StatusBadge";
 
-export default function SatellitePanel({ objectId, status, thresholds, alerts }: {
+export default function SatellitePanel({ objectId, satellite, status, thresholds, alerts }: {
   objectId: number;
+  satellite: Source<SatelliteCollection>;
   status: ObjectStatus | null;
   thresholds: Source<Thresholds>;
   alerts: Alert[];
 }) {
   const { t, fmtDate } = useI18n();
-  const load = useCallback((signal: AbortSignal) => api.satelliteMap(objectId, signal), [objectId]);
-  const history = usePolling(load);
+  // shortcut: App опитує найновіші 1000 спостережень по всіх об'єктах; панель лише фільтрує їх (без власного запиту).
+  // Якщо спостережень стане набагато більше, підтягніть історію об'єкта окремим запитом.
+  const history = useMemo<Source<SatelliteCollection>>(() => ({
+    ...satellite,
+    data: satellite.data && {
+      ...satellite.data,
+      features: satellite.data.features.filter((f) => f.properties.object_id === objectId),
+    },
+  }), [satellite, objectId]);
 
   const latest = history.data ? history.data.features[0]?.properties : status?.latest_satellite_data;
   const ageDays = latest ? Math.floor((Date.now() - Date.parse(latest.observation_date)) / 86_400_000) : null;

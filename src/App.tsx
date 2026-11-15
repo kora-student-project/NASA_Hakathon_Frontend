@@ -105,7 +105,7 @@ export default function App() {
             <Fragment key={selected.id}>
               <ObjectPanel obj={selected} status={statuses[selected.id] ?? EMPTY_SOURCE} refreshKey={refreshKey} />
               <Suspense fallback={<section className="card skeleton" aria-busy="true" />}>
-                <SatellitePanel objectId={selected.id} status={statuses[selected.id]?.data ?? null}
+                <SatellitePanel objectId={selected.id} satellite={satellite} status={statuses[selected.id]?.data ?? null}
                   thresholds={thresholds} alerts={alerts.data ?? []} />
                 <TiltChart objectId={selected.id} thresholds={thresholds.data} />
               </Suspense>

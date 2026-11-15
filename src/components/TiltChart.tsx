@@ -3,7 +3,7 @@ import { CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContai
 import { api } from "../api";
 import { useI18n, type Key } from "../i18n";
 import { AXES, measurementAxes, type SensorSeries } from "../imu";
-import { usePolling } from "../polling";
+import { HISTORY_POLL_MS, usePolling } from "../polling";
 import type { Thresholds } from "../types";
 import SourceRefresh from "./SourceRefresh";
 
@@ -33,7 +33,7 @@ export default function TiltChart({ objectId, thresholds: th }: {
       return api.history(selectedId, from, signal);
     };
   }, [selectedId, hours]);
-  const history = usePolling(loadHistory);
+  const history = usePolling(loadHistory, 0, HISTORY_POLL_MS);
   const data = history.data ?? [];
   const keys = series === "tilt" ? AXES.slice(0, 2) : AXES;
   const chart = [...data].reverse().map((row) => ({ timestamp: row.timestamp, ...measurementAxes(row, series) }));
