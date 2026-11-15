@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { localizedAlertMessage } from "../alertText";
+import { describeError } from "../errors";
 import { useI18n } from "../i18n";
 import type { Source } from "../polling";
 import type { Alert, MonitoredObject } from "../types";
@@ -10,7 +13,7 @@ interface Props {
   onClear: () => void;
   onSelect: (objectId: number) => void;
   canResolve: boolean;
-  onResolve: (id: number) => void;
+  onResolve: (id: number) => Promise<void> | void;
   resolveError: string | null;
   filter: "ALL" | "WARNING" | "CRITICAL";
   setFilter: (f: "ALL" | "WARNING" | "CRITICAL") => void;
@@ -32,7 +35,8 @@ export default function AlertsList({
   showResolved,
   setShowResolved,
 }: Props) {
-  const { t, fmtDateTime } = useI18n();
+  const { t, lang, fmtDateTime } = useI18n();
+  const [busyId, setBusyId] = useState<number | null>(null);
   const name = (id: number) => objects.find((o) => o.id === id)?.name ?? t("alerts.object", { id });
   const shown = (source.data ?? []).filter(
     (a) => (selectedId === null || a.object_id === selectedId) && (filter === "ALL" || a.severity === filter),
@@ -42,7 +46,7 @@ export default function AlertsList({
       <div className="row">
         <h3>{selectedId !== null ? t("alerts.titleFor", { name: name(selectedId) }) : t("alerts.titleAll")}</h3>
         <div className="controls">
-          <select value={filter} onChange={(e) => setFilter(e.target.value as Props["filter"])}>
+          <select aria-label={t("alerts.filter")} value={filter} onChange={(e) => setFilter(e.target.value as Props["filter"])}>
             <option value="ALL">{t("alerts.all")}</option>
             <option value="WARNING">{t("alerts.warning")}</option>
             <option value="CRITICAL">{t("alerts.critical")}</option>
@@ -53,8 +57,9 @@ export default function AlertsList({
           </label>
         </div>
       </div>
+      <p className="alerts-note">{t("alerts.disclaimer")}</p>
       <div className="source-row"><SourceRefresh source={source} /></div>
-      {resolveError && <p className="error" role="alert">{t("alerts.resolveError", { error: resolveError })}</p>}
+      {resolveError && <p className="error" role="alert">{t("alerts.resolveError", { error: describeError(resolveError, t) })}</p>}
       {selectedId !== null && (
         <button className="link" onClick={onClear}>
           {t("alerts.showAll")}
@@ -70,7 +75,7 @@ export default function AlertsList({
               </button>
               <span className="small muted">{fmtDateTime(a.created_at)}</span>
             </div>
-            <div className="msg">{a.message}</div>
+            <div className="msg">{localizedAlertMessage(a, t, lang)}</div>
             <div className="row">
               <span className="small muted">
                 {a.sensor_id ? t("alerts.sensor", { id: a.sensor_id }) : t("alerts.satellite")}
@@ -79,9 +84,12 @@ export default function AlertsList({
               {!a.is_resolved && (
                 <button
                   className="btn"
-                  disabled={!canResolve}
+                  disabled={!canResolve || busyId === a.id}
                   title={canResolve ? "" : t("alerts.needKey")}
-                  onClick={() => onResolve(a.id)}
+                  onClick={async () => {
+                    setBusyId(a.id);
+                    try { await onResolve(a.id); } finally { setBusyId(null); }
+                  }}
                 >
                   {t("alerts.resolve")}
                 </button>

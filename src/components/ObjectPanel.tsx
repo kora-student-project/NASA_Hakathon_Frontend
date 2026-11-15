@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { alertTrigger } from "../alertTrigger";
+import { displayStatus } from "../objectStatuses";
 import { api } from "../api";
 import { useI18n } from "../i18n";
 import { usePolling, type Source } from "../polling";
@@ -56,7 +57,7 @@ export default function ObjectPanel({ obj, status, refreshKey }: {
   const { t, fmtDateTime } = useI18n();
   const data = status.data;
   const s = data?.latest_sensor_data;
-  const st = data?.status ?? "UNKNOWN";
+  const st = displayStatus(status);
   return (
     <section className={`card hero ${st.toLowerCase()}`}>
       <div className="row">

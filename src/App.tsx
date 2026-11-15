@@ -9,7 +9,7 @@ import SatellitePanel from "./components/SatellitePanel";
 import SourceRefresh from "./components/SourceRefresh";
 import StatusBadge from "./components/StatusBadge";
 import TiltChart from "./components/TiltChart";
-import { useObjectStatuses } from "./objectStatuses";
+import { displayStatus, useObjectStatuses } from "./objectStatuses";
 import { EMPTY_SOURCE, usePolling } from "./polling";
 
 const loadSatellite = (signal: AbortSignal) => api.satelliteMap(undefined, signal);
@@ -88,7 +88,7 @@ export default function App() {
               <li key={o.id}>
                 <button className={o.id === selectedId ? "sel" : ""} aria-pressed={o.id === selectedId}
                   onClick={() => toggleSelect(o.id)}>
-                  {o.name} <StatusBadge status={statuses[o.id]?.data?.status ?? "UNKNOWN"} />
+                  {o.name} <StatusBadge status={displayStatus(statuses[o.id])} />
                 </button>
               </li>
             ))}

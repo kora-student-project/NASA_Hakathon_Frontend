@@ -105,10 +105,10 @@ export default function TiltChart({ objectId, thresholds: th }: {
               />
               {th && series === "tilt" && (
                 <>
-                  <ReferenceLine y={th.tilt_warning} stroke="#e0a100" strokeDasharray="5 4" />
-                  <ReferenceLine y={-th.tilt_warning} stroke="#e0a100" strokeDasharray="5 4" />
-                  <ReferenceLine y={th.tilt_critical} stroke="#d9382f" strokeDasharray="5 4" />
-                  <ReferenceLine y={-th.tilt_critical} stroke="#d9382f" strokeDasharray="5 4" />
+                  <ReferenceLine y={th.tilt_warning} stroke="#e0a100" strokeDasharray="5 4" ifOverflow="extendDomain" />
+                  <ReferenceLine y={-th.tilt_warning} stroke="#e0a100" strokeDasharray="5 4" ifOverflow="extendDomain" />
+                  <ReferenceLine y={th.tilt_critical} stroke="#d9382f" strokeDasharray="5 4" ifOverflow="extendDomain" />
+                  <ReferenceLine y={-th.tilt_critical} stroke="#d9382f" strokeDasharray="5 4" ifOverflow="extendDomain" />
                 </>
               )}
               <Legend />

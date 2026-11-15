@@ -19,6 +19,7 @@ export default function SatellitePanel({ objectId, status, thresholds, alerts }:
   const history = usePolling(load);
 
   const latest = history.data ? history.data.features[0]?.properties : status?.latest_satellite_data;
+  const ageDays = latest ? Math.floor((Date.now() - Date.parse(latest.observation_date)) / 86_400_000) : null;
   const satelliteAlerts = alerts.filter((alert) =>
     alert.object_id === objectId && alert.sensor_id === null && !alert.is_resolved);
   const value = latest ? toMillimetres(latest.displacement, latest.unit) : null;
@@ -51,10 +52,11 @@ export default function SatellitePanel({ objectId, status, thresholds, alerts }:
           <span className="muted">{t("sat.latest")} · {fmtDate(latest.observation_date)}</span>
         </div>
       ) : history.data && <p className="muted">{t("sat.noLatest")}</p>}
+      {ageDays !== null && ageDays > 30 && <p className="warn-note">{t("sat.old", { days: ageDays })}</p>}
       {validThresholds ? (
         <div className="sat-thresholds">
-          <span><i className="swatch warning" />{t("status.WARNING")} &gt; {validThresholds.displacement_warning_mm} mm</span>
-          <span><i className="swatch critical" />{t("status.CRITICAL")} &gt; {validThresholds.displacement_critical_mm} mm</span>
+          <span><i className="swatch warning" />{t("status.WARNING")} &gt; {validThresholds.displacement_warning_mm} {t("unit.mm")}</span>
+          <span><i className="swatch critical" />{t("status.CRITICAL")} &gt; {validThresholds.displacement_critical_mm} {t("unit.mm")}</span>
         </div>
       ) : thresholds.data && <p className="muted small">{t("sat.noThresholds")}</p>}
       <div className="source-row"><SourceRefresh source={thresholds} label="data.thresholds" /></div>
@@ -70,9 +72,9 @@ export default function SatellitePanel({ objectId, status, thresholds, alerts }:
                   ticks={dateTicks}
                   tickFormatter={(v: number) => fmtDate(new Date(v).toISOString().slice(0, 10))}
                   fontSize={10} tick={{ fill: "#b5c3d3" }} />
-                <YAxis unit=" mm" fontSize={10} tick={{ fill: "#b5c3d3" }} />
+                <YAxis unit={` ${t("unit.mm")}`} fontSize={10} tick={{ fill: "#b5c3d3" }} />
                 <Tooltip labelFormatter={(v) => fmtDate(new Date(Number(v)).toISOString().slice(0, 10))}
-                  formatter={(v, _name, point) => [`${v} mm`, point.payload?.source || t("map.displacement")]}
+                  formatter={(v, _name, point) => [`${v} ${t("unit.mm")}`, point.payload?.source || t("map.displacement")]}
                   contentStyle={{ background: "#121923", border: "1px solid #34465c", borderRadius: 8 }} />
                 {thresholdLines.flatMap(({ mm, color }) => [mm, -mm].map((limit) => (
                   <ReferenceLine key={limit} y={limit} stroke={color} strokeDasharray="5 4" ifOverflow="extendDomain" />

@@ -300,3 +300,8 @@ aside > * { flex-shrink: 0; }
 .nisar-legend a { color: var(--accent); }
 .nisar-legend strong { color: #ffc93d; font-weight: 600; }
 @media (max-width: 900px) { .nisar-legend { position: static; max-width: none; border-radius: 0; border-width: 1px 0 0; } }
+
+.alerts-note, .warn-note { font-size: 12px; color: var(--muted); margin: 6px 0 2px; }
+.warn-note { color: #ffc93d; }
+.btn:disabled { cursor: progress; }
+@media (min-width: 901px) { .seg button { min-height: 34px; } .small-btn { min-height: 34px; } }

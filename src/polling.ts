@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-const POLL_MS = 15_000;
+export const POLL_MS = 15_000;
 
 export interface Source<T> {
   data: T | null;
@@ -22,14 +22,27 @@ export function usePoll(run: ((signal: AbortSignal) => Promise<void>) | null, re
     if (!run) return;
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let running = false;
 
     const poll = async () => {
-      await run(controller.signal);
+      if (running) return;
+      running = true;
+      // у прихованій вкладці не опитуємо сервер
+      if (!document.hidden) await run(controller.signal);
+      running = false;
       if (!controller.signal.aborted) timer = setTimeout(poll, POLL_MS);
     };
+    const onVisible = () => {
+      if (!document.hidden && !running) {
+        clearTimeout(timer);
+        void poll();
+      }
+    };
 
+    document.addEventListener("visibilitychange", onVisible);
     void poll();
     return () => {
+      document.removeEventListener("visibilitychange", onVisible);
       controller.abort();
       clearTimeout(timer);
     };

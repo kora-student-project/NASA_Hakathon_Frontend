@@ -6,9 +6,9 @@ const OPTIONS: { value: Lang; label: string }[] = [
 ];
 
 export default function LangSwitch() {
-  const { lang, setLang } = useI18n();
+  const { lang, setLang, t } = useI18n();
   return (
-    <div className="seg" role="group" aria-label="Language">
+    <div className="seg" role="group" aria-label={t("lang.label")}>
       {OPTIONS.map((o) => (
         <button
           key={o.value}

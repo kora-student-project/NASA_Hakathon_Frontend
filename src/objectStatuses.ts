@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { api } from "./api";
-import { sourceFailure, usePoll, type Source } from "./polling";
-import type { MonitoredObject, ObjectStatus } from "./types";
+import { POLL_MS, sourceFailure, usePoll, type Source } from "./polling";
+import type { MonitoredObject, ObjectStatus, Status } from "./types";
 
 // Leave browser connections available for alerts and time series while fetching markers.
 const STATUS_CONCURRENCY = 4;
@@ -36,4 +36,15 @@ export function useObjectStatuses(objects: MonitoredObject[], refreshKey: number
 
   usePoll(objectIds ? load : null, refreshKey);
   return statuses;
+}
+
+/** Дані застаріли: останній запит невдалий і успішна відповідь була давніше за ~2 цикли опитування. */
+export function isStale(source: Source<ObjectStatus> | undefined): boolean {
+  return Boolean(source?.error && source.updatedAt && Date.now() - Date.parse(source.updatedAt) > 2 * POLL_MS);
+}
+
+/** Статус для відображення: застарілі або відсутні дані = UNKNOWN, а не «зелений» старий статус. */
+export function displayStatus(source: Source<ObjectStatus> | undefined): Status {
+  if (!source?.data || isStale(source)) return "UNKNOWN";
+  return source.data.status;
 }

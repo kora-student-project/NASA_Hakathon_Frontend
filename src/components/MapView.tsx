@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CircleMarker, MapContainer, Popup, TileLayer, useMap } from "react-leaflet";
 import { STATUS_COLOR } from "../format";
 import { displacementStatus, toMillimetres } from "../displacement";
 import { useI18n } from "../i18n";
+import { displayStatus, isStale } from "../objectStatuses";
 import type { Source } from "../polling";
 import type { MonitoredObject, ObjectStatus, SatelliteCollection, Thresholds } from "../types";
 import LandslideLayer from "./LandslideLayer";
@@ -43,7 +44,8 @@ export default function MapView({ objects, statuses, satellite, selectedId, onSe
   const selected = objects.find((o) => o.id === selectedId);
   const probe = selected ?? objects[0];
   const latest = useLatestNisarDate(probe?.latitude ?? 49.8397, probe?.longitude ?? 24.0297, showNisar);
-  useEffect(() => { if (latest.date) setNisarDate(latest.date); }, [latest.date]);
+  const pickedByUser = useRef(false);
+  useEffect(() => { if (latest.date && !pickedByUser.current) setNisarDate(latest.date); }, [latest.date]);
   const objectPositions = new Set(objects.map((o) => `${o.latitude},${o.longitude}`));
   return (
     <div className="map-frame">
@@ -61,7 +63,12 @@ export default function MapView({ objects, statuses, satellite, selectedId, onSe
         <label className="check"><input type="checkbox" checked={showSusceptibility}
           onChange={(e) => setShowSusceptibility(e.target.checked)} />{t("map.susceptibility")}</label>
         {showNisar && (
-          <NisarControls date={nisarDate} setDate={setNisarDate} searching={latest.searching} onLatest={latest.search} />
+          <NisarControls
+            date={nisarDate}
+            setDate={(d) => { pickedByUser.current = true; setNisarDate(d); }}
+            searching={latest.searching}
+            onLatest={() => { pickedByUser.current = false; latest.search(); }}
+          />
         )}
       </div>
       <MapContainer center={[49.8397, 24.0297]} zoom={12} className="map">
@@ -110,7 +117,8 @@ export default function MapView({ objects, statuses, satellite, selectedId, onSe
         })}
 
       {objects.map((o) => {
-        const st = statuses[o.id]?.data?.status ?? "UNKNOWN";
+        const st = displayStatus(statuses[o.id]);
+        const stale = isStale(statuses[o.id]);
         const color = STATUS_COLOR[st];
         return (
           <CircleMarker
@@ -121,7 +129,11 @@ export default function MapView({ objects, statuses, satellite, selectedId, onSe
             pathOptions={{ color: st === "CRITICAL" ? color : "#ffffff", weight: 2, fillColor: color, fillOpacity: 0.95 }}
             eventHandlers={{ click: () => onSelect(o.id) }}
           >
-            <Popup>{o.name}</Popup>
+            <Popup>
+              <strong>{o.name}</strong>
+              <br />
+              {t(`status.${st}`)}{stale ? ` · ${t("map.statusStale")}` : ""}
+            </Popup>
           </CircleMarker>
         );
       })}
